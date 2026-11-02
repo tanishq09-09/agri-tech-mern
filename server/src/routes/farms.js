@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import Farm from '../models/Farm.js';
+import { protect } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+const router = Router(); router.use(protect);
+router.get('/', asyncHandler(async (req,res)=>res.json(await Farm.find({owner:req.user._id}).sort({createdAt:-1}))));
+router.post('/', asyncHandler(async(req,res)=>res.status(201).json(await Farm.create({...req.body,owner:req.user._id}))));
+router.put('/:id', asyncHandler(async(req,res)=>{const f=await Farm.findOneAndUpdate({_id:req.params.id,owner:req.user._id},req.body,{new:true,runValidators:true}); if(!f)return res.status(404).json({message:'Farm not found'}); res.json(f)}));
+router.delete('/:id', asyncHandler(async(req,res)=>{const f=await Farm.findOneAndDelete({_id:req.params.id,owner:req.user._id}); if(!f)return res.status(404).json({message:'Farm not found'}); res.json({message:'Farm deleted'})}));
+export default router;

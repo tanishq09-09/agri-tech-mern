@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import Crop from '../models/Crop.js';
+import Farm from '../models/Farm.js';
+import { protect } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+const router=Router(); router.use(protect);
+router.get('/',asyncHandler(async(req,res)=>res.json(await Crop.find({owner:req.user._id}).populate('farm','name').sort({createdAt:-1}))));
+router.post('/',asyncHandler(async(req,res)=>{if(req.body.farm){const f=await Farm.findOne({_id:req.body.farm,owner:req.user._id});if(!f)return res.status(400).json({message:'Choose one of your own farms.'})}res.status(201).json(await Crop.create({...req.body,owner:req.user._id}))}));
+router.put('/:id',asyncHandler(async(req,res)=>{const c=await Crop.findOneAndUpdate({_id:req.params.id,owner:req.user._id},req.body,{new:true,runValidators:true});if(!c)return res.status(404).json({message:'Crop not found'});res.json(c)}));
+router.delete('/:id',asyncHandler(async(req,res)=>{const c=await Crop.findOneAndDelete({_id:req.params.id,owner:req.user._id});if(!c)return res.status(404).json({message:'Crop not found'});res.json({message:'Crop deleted'})}));
+export default router;

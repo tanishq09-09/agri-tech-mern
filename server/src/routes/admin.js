@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import User from '../models/User.js';
+import Farm from '../models/Farm.js';
+import Crop from '../models/Crop.js';
+import Record from '../models/Record.js';
+import { protect, adminOnly } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+const router=Router();router.use(protect,adminOnly);
+router.get('/overview',asyncHandler(async(_req,res)=>res.json({users:await User.countDocuments(),farms:await Farm.countDocuments(),crops:await Crop.countDocuments(),orders:await Record.countDocuments({type:'order'}),consultations:await Record.countDocuments({type:'consultation'})})));
+router.get('/users',asyncHandler(async(_req,res)=>res.json(await User.find().select('name email role createdAt').sort({createdAt:-1}).limit(200))));
+router.patch('/users/:id/role',asyncHandler(async(req,res)=>{if(!['farmer','admin'].includes(req.body.role))return res.status(400).json({message:'Role must be farmer or admin.'});const user=await User.findByIdAndUpdate(req.params.id,{role:req.body.role},{new:true}).select('name email role');if(!user)return res.status(404).json({message:'User not found'});res.json(user)}));
+router.get('/records',asyncHandler(async(_req,res)=>res.json(await Record.find().populate('owner','name email').sort({createdAt:-1}).limit(300))));
+export default router;
